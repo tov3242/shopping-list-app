@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Premium Shopping List</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #6366f1;
+      --primary-hover: #4f46e5;
+      --bg: #f8fafc;
+      --card-bg: rgba(255, 255, 255, 0.8);
+      --text-main: #1e293b;
+      --text-muted: #64748b;
+      --danger: #ef4444;
+      --success: #10b981;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Outfit', sans-serif;
+    }
+
+    body {
+      background: linear-gradient(135deg, #e0e7ff 0%, #f1f5f9 100%);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 450px;
+      background: var(--card-bg);
+      backdrop-filter: blur(12px);
+      border-radius: 24px;
+      padding: 40px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.5);
+    }
+
+    h1 {
+      font-size: 2rem;
+      font-weight: 600;
+      color: var(--text-main);
+      margin-bottom: 8px;
+      text-align: center;
+    }
+
+    p.subtitle {
+      color: var(--text-muted);
+      text-align: center;
+      margin-bottom: 32px;
+      font-weight: 300;
+    }
+
+    .input-group {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+
+    input[type="text"] {
+      flex: 1;
+      background: white;
+      border: 1px solid #e2e8f0;
+      padding: 12px 20px;
+      border-radius: 14px;
+      font-size: 1rem;
+      outline: none;
+      transition: all 0.3s ease;
+    }
+
+    input[type="text"]:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
+    }
+
+    button#add-btn {
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    button#add-btn:hover {
+      background: var(--primary-hover);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2);
+    }
+
+    ul {
+      list-style: none;
+    }
+
+    li {
+      background: white;
+      margin-bottom: 12px;
+      padding: 16px 20px;
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+      transition: all 0.3s ease;
+      animation: slideIn 0.3s ease forwards;
+    }
+
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    li.completed {
+      opacity: 0.6;
+    }
+
+    li.completed span {
+      text-decoration: line-through;
+      color: var(--text-muted);
+    }
+
+    .checkbox {
+      width: 22px;
+      height: 22px;
+      border: 2px solid #cbd5e1;
+      border-radius: 6px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+    }
+
+    li.completed .checkbox {
+      background: var(--success);
+      border-color: var(--success);
+    }
+
+    li.completed .checkbox::after {
+      content: '\2713';
+      color: white;
+      font-size: 14px;
+      font-weight: bold;
+    }
+
+    span.item-text {
+      flex: 1;
+      font-size: 1rem;
+      color: var(--text-main);
+      font-weight: 400;
+    }
+
+    .delete-btn {
+      background: none;
+      border: none;
+      color: #cbd5e1;
+      cursor: pointer;
+      padding: 4px;
+      transition: all 0.2s ease;
+      font-size: 1.2rem;
+    }
+
+    .delete-btn:hover {
+      color: var(--danger);
+    }
+
+    .empty-state {
+      text-align: center;
+      color: var(--text-muted);
+      margin-top: 40px;
+      display: none;
+    }
+
+    ul:empty+.empty-state {
+      display: block;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <h1>Shopping List</h1>
+    <p class="subtitle">체계적으로 장보기를 준비해보세요.</p>
+
+    <div class="input-group">
+      <input type="text" id="item-input" placeholder="필요한 품목을 입력하세요..." autocomplete="off">
+      <button id="add-btn">추가</button>
+    </div>
+
+    <ul id="shopping-list"></ul>
+    <div class="empty-state">
+      <p>목록이 비어있습니다.</p>
+    </div>
+  </div>
+
+  <script>
+    const input = document.getElementById('item-input');
+    const addBtn = document.getElementById('add-btn');
+    const list = document.getElementById('shopping-list');
+
+    let items = JSON.parse(localStorage.getItem('shopping-items') || '[]');
+
+    function saveItems() {
+      localStorage.setItem('shopping-items', JSON.stringify(items));
+    }
+
+    function createItemEl(item) {
+      const li = document.createElement('li');
+      li.dataset.id = item.id;
+      if (item.completed) li.classList.add('completed');
+
+      li.innerHTML = `
+                <div class="checkbox"></div>
+                <span class="item-text">${item.text}</span>
+                <button class="delete-btn">\u00d7</button>
+            `;
+
+      li.querySelector('.checkbox').addEventListener('click', () => {
+        item.completed = !item.completed;
+        li.classList.toggle('completed');
+        saveItems();
+      });
+
+      li.querySelector('.delete-btn').addEventListener('click', () => {
+        items = items.filter(i => i.id !== item.id);
+        li.style.opacity = '0';
+        li.style.transform = 'scale(0.9)';
+        setTimeout(() => {
+          li.remove();
+          saveItems();
+        }, 300);
+      });
+
+      return li;
+    }
+
+    function render() {
+      list.innerHTML = '';
+      items.forEach(item => {
+        list.appendChild(createItemEl(item));
+      });
+    }
+
+    function addItem() {
+      const text = input.value.trim();
+      if (!text) return;
+
+      const newItem = {
+        id: Date.now(),
+        text: text,
+        completed: false
+      };
+
+      items.push(newItem);
+      list.appendChild(createItemEl(newItem));
+      input.value = '';
+      input.focus();
+      saveItems();
+    }
+
+    addBtn.addEventListener('click', addItem);
+    input.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') addItem();
+    });
+
+    render();
+  </script>
+</body>
+
+</html>
